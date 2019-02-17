@@ -4,11 +4,11 @@ import './nimgame.dart';
 
 class NIMGameAI {
   Random _rnd = Random(DateTime.now().microsecondsSinceEpoch);
-  Difficulty _difficulty;
+  NIMDifficulty _difficulty;
   bool _misere;
   NIMGameState _state;
 
-  NIMGameAI(Difficulty difficulty, bool misere) {
+  NIMGameAI(NIMDifficulty difficulty, bool misere) {
     _difficulty = difficulty;
     _misere = misere;
   }
@@ -17,7 +17,7 @@ class NIMGameAI {
     _state = state;
     bool rand = false;
     int level = _rnd.nextInt(100);
-    if ((_difficulty == Difficulty.easy && level < 70) || (_difficulty == Difficulty.hard && level < 40)) {
+    if ((_difficulty == NIMDifficulty.easy && level < 70) || (_difficulty == NIMDifficulty.hard && level < 40)) {
       rand = true;
     }
     if (rand) {

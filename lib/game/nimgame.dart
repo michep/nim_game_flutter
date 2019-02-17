@@ -1,7 +1,9 @@
-enum GameType { pvp, pvc }
-enum Player { player1, player2, ai }
-enum ElementState { present, toRemove, empty }
-enum Difficulty { easy, hard, insane }
+import 'package:quiver/collection.dart';
+
+enum NIMGameType { pvp, pvc }
+enum NIMPlayer { player1, player2, ai }
+enum NIMElementState { present, toRemove, empty }
+enum NIMDifficulty { easy, hard, insane }
 
 class NIMGameState {
   final List<int> piles;
@@ -29,22 +31,19 @@ class NIMGameTurn {
   @override
   String toString() {
     StringBuffer ret = StringBuffer("");
-    ret.write("Taking ${toRemove} from ${pile}");
+    ret.write("Taking $toRemove from $pile");
     return ret.toString();
   }
 }
 
 class NIMGamePile {
-  List<ElementState> _elements;
+  List<NIMElementState> _elements;
 
   NIMGamePile.allPresent(int count) {
-    _elements = List<ElementState>(count);
-    for (var idx = 0; idx < count; idx++) {
-      _elements[idx] = ElementState.present;
-    }
+    _elements = List<NIMElementState>.generate(count, (idx) => NIMElementState.present);
   }
 
-  List<ElementState> get elements => _elements;
+  List<NIMElementState> get elements => _elements;
 
   operator [](int idx) => _elements[idx];
 
@@ -52,8 +51,26 @@ class NIMGamePile {
 
   int get activeCount {
     int count = 0;
-    _elements.forEach((e) => e == ElementState.present ? count++ : count);
+    _elements.forEach((e) => e == NIMElementState.present ? count++ : count);
     return count;
+  }
+
+  int get toRemoveCount {
+    int count = 0;
+    _elements.forEach((e) => e == NIMElementState.toRemove ? count++ : count);
+    return count;
+  }
+
+  void switchElementState(int idx) {
+    switch (_elements[idx]) {
+      case NIMElementState.present:
+        _elements[idx] = NIMElementState.toRemove;
+        break;
+      case NIMElementState.toRemove:
+        _elements[idx] = NIMElementState.present;
+        break;
+      default:
+    }
   }
 
   void removeFromStart(int count) {
@@ -61,8 +78,8 @@ class NIMGamePile {
     var n = 0;
     for (var e = 0; e < length; e++) {
       if (n == count) break;
-      if (_elements[e] == ElementState.present) {
-        _elements[e] = ElementState.empty;
+      if (_elements[e] == NIMElementState.present) {
+        _elements[e] = NIMElementState.empty;
         n++;
       }
     }
@@ -71,29 +88,65 @@ class NIMGamePile {
   void removeFromEnd(int count) {
     assert(count > 0 && count <= activeCount);
     var n = 0;
-    for (var e = length-1; e >= 0; e--) {
+    for (var e = length - 1; e >= 0; e--) {
       if (n == count) break;
-      if (_elements[e] == ElementState.present) {
-        _elements[e] = ElementState.empty;
+      if (_elements[e] == NIMElementState.present) {
+        _elements[e] = NIMElementState.empty;
         n++;
       }
     }
   }
 }
 
-class NIMGamePiles {
+class NIMGame {
+  NIMGameType _gameType;
+  NIMPlayer _currentPlayer;
+  NIMPlayer _prevPlayer;
+  NIMPlayer _winner;
   List<NIMGamePile> _piles;
+  bool _misere;
+  bool _fromStart = true;
+  String _playerName1;
+  String _playerName2;
 
-  NIMGamePiles(List<int> initPiles) {
-    _piles = List<NIMGamePile>(initPiles.length);
-    for (var idx = 0; idx < initPiles.length; idx++) {
-      _piles[idx] = NIMGamePile.allPresent(initPiles[idx]);
+  NIMPlayer get currentPlayer => _currentPlayer;
+
+  NIMPlayer get winner => _winner;
+
+  String get currentPlayerName {
+    switch (_currentPlayer) {
+      case NIMPlayer.player1:
+        return _playerName1;
+      case NIMPlayer.player2:
+        return _playerName2;
+      default:
+        return "NIM AI";
     }
   }
 
-  // int totalCountRow(int i) => _heaps[i].length;
-  // int activeCountRow(int i) => _heaps[i].activeCount;
-  int get length => _piles.length;
+  NIMGame.usual() {
+    _gameType = NIMGameType.pvc;
+    _currentPlayer = NIMPlayer.player1;
+    _piles = _initPiles([3, 5, 7]);
+    _playerName1 = "Player 1";
+    _playerName2 = "player 2";
+  }
+
+  NIMGame(NIMGameType gameType, NIMPlayer firstTurn, bool misere, List<int> initPiles,
+      {String playerName1 = "Player 1", String playerName2 = "Player 2"}) {
+    _gameType = gameType;
+    _currentPlayer = firstTurn;
+    _piles = _initPiles(initPiles);
+    _misere = misere;
+    _playerName1 = playerName1;
+    _playerName2 = playerName2;
+  }
+
+  List<NIMGamePile> get piles => _piles;
+
+  List<NIMGamePile> _initPiles(List<int> initPiles) {
+    return List<NIMGamePile>.generate(initPiles.length, (idx) => NIMGamePile.allPresent(initPiles[idx]));
+  }
 
   bool get isEmpty {
     for (var idx = 0; idx < _piles.length; idx++) {
@@ -102,51 +155,22 @@ class NIMGamePiles {
     return true;
   }
 
-  NIMGamePile operator [](int idx) => _piles[idx];
-}
-
-class NIMGame {
-  GameType _gameType;
-  Player _currentPlayer;
-  Player _prevPlayer;
-  Player _winner;
-  NIMGamePiles _piles;
-  bool _misere;
-  bool _fromStart = true;
-
-
-  Player get currentPlayer => _currentPlayer;
-  Player get winner => _winner;
-
-  NIMGame.usual() {
-    _gameType = GameType.pvc;
-    _currentPlayer = Player.player1;
-    _piles = NIMGamePiles([3, 5, 7]);
-  }
-
-  NIMGame(GameType gameType, Player firstTurn, bool misere, List<int> initPiles) {
-    _gameType = gameType;
-    _currentPlayer = firstTurn;
-    _piles = NIMGamePiles(initPiles);
-    _misere = misere;
-  }
-
-  List<NIMGamePile> get piles => _piles._piles;
-
   void switchSides() {
     _prevPlayer = _currentPlayer;
-    if (_gameType == GameType.pvp) {
-      if (_currentPlayer == Player.player1)
-        _currentPlayer = Player.player2;
+    if (_gameType == NIMGameType.pvp) {
+      if (_currentPlayer == NIMPlayer.player1)
+        _currentPlayer = NIMPlayer.player2;
       else
-        _currentPlayer = Player.player1;
+        _currentPlayer = NIMPlayer.player1;
     } else {
-      if (_currentPlayer == Player.player1)
-        _currentPlayer = Player.ai;
+      if (_currentPlayer == NIMPlayer.player1)
+        _currentPlayer = NIMPlayer.ai;
       else
-        _currentPlayer = Player.player1;
+        _currentPlayer = NIMPlayer.player1;
     }
   }
+
+  NIMGamePile operator [](int idx) => _piles[idx];
 
   NIMGameState get state {
     var ret = List<int>(_piles.length);
@@ -156,6 +180,22 @@ class NIMGame {
     return NIMGameState(ret);
   }
 
+  bool applyToRemove() {
+    for (var pi = 0; pi < _piles.length; pi++) {
+      for (var ei = 0; ei < _piles[pi]._elements.length; ei++) {
+        if (_piles[pi]._elements[ei] == NIMElementState.toRemove) _piles[pi]._elements[ei] = NIMElementState.empty;
+      }
+    }
+    if (isEmpty) {
+      _winner = _currentPlayer;
+      if (_misere) {
+        _winner = _prevPlayer;
+      }
+      return true;
+    }
+    return false;
+  }
+
   bool applyTurn(NIMGameTurn turn) {
     if (_fromStart) {
       _piles[turn.pile].removeFromStart(turn.toRemove);
@@ -163,7 +203,7 @@ class NIMGame {
       _piles[turn.pile].removeFromEnd(turn.toRemove);
     }
     _fromStart = !_fromStart;
-    if (_piles.isEmpty) {
+    if (isEmpty) {
       _winner = _currentPlayer;
       if (_misere) {
         _winner = _prevPlayer;
@@ -182,10 +222,10 @@ class NIMGame {
       ret.write("[" + "${_piles[h].activeCount}".padLeft(2) + "] ");
       for (var e = 0; e < _piles[h].length; e++) {
         switch (_piles[h][e]) {
-          case ElementState.empty:
+          case NIMElementState.empty:
             ret.write("- ");
             break;
-          case ElementState.toRemove:
+          case NIMElementState.toRemove:
             ret.write("O ");
             break;
           default:
