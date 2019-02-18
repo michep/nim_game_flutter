@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import './nimgame.dart';
 import '../state/game_bloc.dart';
-import '../state/game_event.dart';
 
 class ItemWidget extends StatelessWidget {
   final int pile, index;
@@ -24,11 +23,12 @@ class ItemWidget extends StatelessWidget {
     }
 
   }
+  
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        bloc.gameEventSink.add(NIMTapOnItemEvent(pile, index));
+        GlobalBloc.push(NIMTapOnItemEvent(pile, index));
       },
       child: Container(
         padding: EdgeInsets.all(4),

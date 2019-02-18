@@ -5,7 +5,7 @@ import './nimai.dart';
 
 main() {
   var misere = true;
-  var game = NIMGame(NIMGameType.pvc, NIMPlayer.player1, misere, [1, 1, 2]);
+  var game = NIMGame(NIMGameType.pvc, NIMPlayer.player1, NIMDifficulty.easy, false, [1, 1, 2]);
   var ai = NIMGameAI(NIMDifficulty.insane, misere);
   if (misere) print("!!! MISERE !!!");
 

@@ -1,45 +1,63 @@
-import 'dart:async';
+import 'package:rxdart/rxdart.dart';
 
-import './game_event.dart';
 import '../game/nimgame.dart';
+
+abstract class NIMGameEvent {}
+
+class NIMTapOnItemEvent extends NIMGameEvent {
+  final int pile, item;
+  NIMTapOnItemEvent(this.pile, this.item);
+}
+
+class NIMEndTurnEvent extends NIMGameEvent {}
+
+class NIMNewSettingsEvent extends NIMGameEvent {
+  final NIMGameSettings settings;
+  NIMNewSettingsEvent(this.settings);
+}
 
 class GameStateBloc {
   NIMGame _game;
+  NIMGameSettings _settings = NIMGameSettings();
   int workingPile = -1;
 
-  final _gameStateController = StreamController<NIMGame>();
-  StreamSink<NIMGame> get _inboudGameState => _gameStateController.sink;
-  Stream<NIMGame> get gameState => _gameStateController.stream;
+  static final GameStateBloc _bloc = GameStateBloc._internal();
 
-  final _gameEvenController = StreamController<NIMGameEvent>();
-  Sink<NIMGameEvent> get gameEventSink => _gameEvenController.sink;
-
-  GameStateBloc(NIMGame game) {
-    _game = game;
-    _gameEvenController.stream.listen(_mapEventToState);
+  GameStateBloc._internal() {
+    _eventController.stream.listen(_mapEventToGameState);
   }
 
-  void _mapEventToState(NIMGameEvent event) {
+  factory GameStateBloc() {
+    return _bloc;
+  }
+
+  var _eventController = BehaviorSubject<NIMGameEvent>();
+  var _gameController = BehaviorSubject<NIMGame>();
+
+  Function(NIMGameEvent) get push => _eventController.sink.add;
+  Stream<NIMGame> get stream => _gameController;
+
+  void _mapEventToGameState(NIMGameEvent event) {
     switch (event.runtimeType) {
       case NIMTapOnItemEvent:
-        print("event NIMTapOnItemEvent: pile ${(event as NIMTapOnItemEvent).pile}, item ${(event as NIMTapOnItemEvent).item}");
         _processTapEvent(event);
         break;
       case NIMEndTurnEvent:
-        print("event NIMEndTurnEvent");
-        workingPile = -1;
-        _game.applyToRemove();
-        _game.switchSides();
+        _processEndTurnEvent(event);
+        break;
+      case NIMNewSettingsEvent:
+        _processewSettingsEvent(event);
         break;
       default:
         print("Unknown event");
     }
-    _inboudGameState.add(_game);
+    _gameController.add(_game);
   }
 
   void _processTapEvent(NIMTapOnItemEvent event) {
     var currentItemState = _game.piles[event.pile][event.item];
     var markingToDelete = currentItemState == NIMElementState.present;
+    print("event NIMTapOnItemEvent: pile ${event.pile}, item ${event.item}");
     if (currentItemState == NIMElementState.empty) {
       print("ERROR: item is already removed");
       return;
@@ -58,11 +76,30 @@ class GameStateBloc {
     }
     if (workingPile != event.pile) {
       print("ERROR: wrong pile");
-    } 
+    }
+  }
+
+  void _processEndTurnEvent(NIMEndTurnEvent event) {
+    if (workingPile == -1) {
+      print("ERROR: no selected items");
+      return;
+    }
+    print("event NIMEndTurnEvent");
+    workingPile = -1;
+    _game.applyToRemove();
+    _game.switchSides();
+  }
+
+  void _processewSettingsEvent(NIMNewSettingsEvent event) {
+    print("event NIMNewSettingsEvent");
+    _settings = event.settings;
+    _game = NIMGame.withSettings(_settings);
   }
 
   void dispose() {
-    _gameStateController.close();
-    _gameEvenController.close();
+    _eventController.close();
+    _gameController.close();
   }
 }
+
+final GameStateBloc GlobalBloc = GameStateBloc();

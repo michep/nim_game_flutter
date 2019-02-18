@@ -1,9 +1,27 @@
-import 'package:quiver/collection.dart';
-
 enum NIMGameType { pvp, pvc }
 enum NIMPlayer { player1, player2, ai }
 enum NIMElementState { present, toRemove, empty }
 enum NIMDifficulty { easy, hard, insane }
+
+class NIMGameSettings {
+  final NIMGameType gameType;
+  final NIMPlayer firstTurn;
+  final NIMDifficulty difficulty;
+  final List<int> initPiles;
+  final bool misere;
+  final String playerName1;
+  final String playerName2;
+
+  NIMGameSettings({
+    this.gameType = NIMGameType.pvp,
+    this.firstTurn = NIMPlayer.player1,
+    this.difficulty = NIMDifficulty.easy,
+    this.misere = false,
+    this.playerName1 = "Player 1",
+    this.playerName2 = "Player 2",
+    this.initPiles,
+  });
+}
 
 class NIMGameState {
   final List<int> piles;
@@ -104,6 +122,7 @@ class NIMGame {
   NIMPlayer _prevPlayer;
   NIMPlayer _winner;
   List<NIMGamePile> _piles;
+  NIMDifficulty _difficulty;
   bool _misere;
   bool _fromStart = true;
   String _playerName1;
@@ -112,6 +131,17 @@ class NIMGame {
   NIMPlayer get currentPlayer => _currentPlayer;
 
   NIMPlayer get winner => _winner;
+
+  String get winnerName {
+    switch (_winner) {
+      case NIMPlayer.player1:
+        return _playerName1;
+      case NIMPlayer.player2:
+        return _playerName2;
+      default:
+        return "NIM AI";
+    }
+  }
 
   String get currentPlayerName {
     switch (_currentPlayer) {
@@ -124,18 +154,30 @@ class NIMGame {
     }
   }
 
+  NIMGame.withSettings(NIMGameSettings settings) {
+    _gameType = settings.gameType;
+    _currentPlayer = settings.firstTurn;
+    _difficulty = settings.difficulty;
+    _misere = settings.misere;
+    _piles = _initPiles(settings.initPiles);
+    _playerName1 = settings.playerName1;
+    _playerName2 = settings.playerName2;
+  }
+
   NIMGame.usual() {
     _gameType = NIMGameType.pvc;
     _currentPlayer = NIMPlayer.player1;
+    _difficulty = NIMDifficulty.easy;
     _piles = _initPiles([3, 5, 7]);
     _playerName1 = "Player 1";
     _playerName2 = "player 2";
   }
 
-  NIMGame(NIMGameType gameType, NIMPlayer firstTurn, bool misere, List<int> initPiles,
+  NIMGame(NIMGameType gameType, NIMPlayer firstTurn, NIMDifficulty difficulty, bool misere, List<int> initPiles,
       {String playerName1 = "Player 1", String playerName2 = "Player 2"}) {
     _gameType = gameType;
     _currentPlayer = firstTurn;
+    _difficulty = difficulty;
     _piles = _initPiles(initPiles);
     _misere = misere;
     _playerName1 = playerName1;

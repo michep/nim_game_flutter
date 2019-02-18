@@ -28,13 +28,13 @@ class StartPage extends StatelessWidget {
     );
   }
 
-  _navigateToSettings(BuildContext context) {
+  VoidCallback _navigateToSettings(BuildContext context) {
     return () {
       Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
     };
   }
 
-  _navigateToGame(BuildContext context) {
+  VoidCallback _navigateToGame(BuildContext context) {
     return () {
       Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage()));
     };
