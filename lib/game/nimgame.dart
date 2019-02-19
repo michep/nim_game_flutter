@@ -122,7 +122,6 @@ class NIMGame {
   NIMPlayer _prevPlayer;
   NIMPlayer _winner;
   List<NIMGamePile> _piles;
-  NIMDifficulty _difficulty;
   bool _misere;
   bool _fromStart = true;
   String _playerName1;
@@ -157,7 +156,6 @@ class NIMGame {
   NIMGame.withSettings(NIMGameSettings settings) {
     _gameType = settings.gameType;
     _currentPlayer = settings.firstTurn;
-    _difficulty = settings.difficulty;
     _misere = settings.misere;
     _piles = _initPiles(settings.initPiles);
     _playerName1 = settings.playerName1;
@@ -167,7 +165,6 @@ class NIMGame {
   NIMGame.usual() {
     _gameType = NIMGameType.pvc;
     _currentPlayer = NIMPlayer.player1;
-    _difficulty = NIMDifficulty.easy;
     _piles = _initPiles([3, 5, 7]);
     _playerName1 = "Player 1";
     _playerName2 = "player 2";
@@ -177,7 +174,6 @@ class NIMGame {
       {String playerName1 = "Player 1", String playerName2 = "Player 2"}) {
     _gameType = gameType;
     _currentPlayer = firstTurn;
-    _difficulty = difficulty;
     _piles = _initPiles(initPiles);
     _misere = misere;
     _playerName1 = playerName1;
@@ -228,14 +224,7 @@ class NIMGame {
         if (_piles[pi]._elements[ei] == NIMElementState.toRemove) _piles[pi]._elements[ei] = NIMElementState.empty;
       }
     }
-    if (isEmpty) {
-      _winner = _currentPlayer;
-      if (_misere) {
-        _winner = _prevPlayer;
-      }
-      return true;
-    }
-    return false;
+    return _checkGameOver();
   }
 
   bool applyTurn(NIMGameTurn turn) {
@@ -245,6 +234,10 @@ class NIMGame {
       _piles[turn.pile].removeFromEnd(turn.toRemove);
     }
     _fromStart = !_fromStart;
+    return _checkGameOver();
+  }
+
+  bool _checkGameOver() {
     if (isEmpty) {
       _winner = _currentPlayer;
       if (_misere) {
@@ -260,7 +253,7 @@ class NIMGame {
     StringBuffer ret = StringBuffer("");
     ret.writeln("\nCURRENT GAME POSITION");
     for (var h = 0; h < _piles.length; h++) {
-      ret.writeln("PILE ${h}");
+      ret.writeln("PILE $h");
       ret.write("[" + "${_piles[h].activeCount}".padLeft(2) + "] ");
       for (var e = 0; e < _piles[h].length; e++) {
         switch (_piles[h][e]) {

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:rxdart/rxdart.dart';
 
 import '../game/nimgame.dart';
+import '../game/nimai.dart';
 
 abstract class NIMGameEvent {}
 
@@ -16,14 +18,27 @@ class NIMNewSettingsEvent extends NIMGameEvent {
   NIMNewSettingsEvent(this.settings);
 }
 
+class NIMAITurnEvent extends NIMGameEvent {
+  final NIMGameTurn turn;
+  NIMAITurnEvent(this.turn);
+}
+
 class GameStateBloc {
+  NIMGameSettings _settings;
   NIMGame _game;
-  NIMGameSettings _settings = NIMGameSettings();
+  NIMGameAI _ai;
   int workingPile = -1;
 
   static final GameStateBloc _bloc = GameStateBloc._internal();
 
   GameStateBloc._internal() {
+    _settings = NIMGameSettings(
+      initPiles: [3, 5, 7],
+      gameType: NIMGameType.pvc,
+    );
+    _game = NIMGame.withSettings(_settings);
+    _ai = NIMGameAI.withSettings(_settings);
+    push(NIMNewSettingsEvent(_settings));
     _eventController.stream.listen(_mapEventToGameState);
   }
 
@@ -33,9 +48,11 @@ class GameStateBloc {
 
   var _eventController = BehaviorSubject<NIMGameEvent>();
   var _gameController = BehaviorSubject<NIMGame>();
+  var _settingsController = BehaviorSubject<NIMGameSettings>();
 
   Function(NIMGameEvent) get push => _eventController.sink.add;
-  Stream<NIMGame> get stream => _gameController;
+  Stream<NIMGame> get gamestream => _gameController.stream;
+  Stream<NIMGameSettings> get settingsstream => _settingsController.stream;
 
   void _mapEventToGameState(NIMGameEvent event) {
     switch (event.runtimeType) {
@@ -48,6 +65,9 @@ class GameStateBloc {
       case NIMNewSettingsEvent:
         _processewSettingsEvent(event);
         break;
+      case NIMAITurnEvent:
+        _processAITurnEvent(event);
+        break;
       default:
         print("Unknown event");
     }
@@ -56,7 +76,6 @@ class GameStateBloc {
 
   void _processTapEvent(NIMTapOnItemEvent event) {
     var currentItemState = _game.piles[event.pile][event.item];
-    var markingToDelete = currentItemState == NIMElementState.present;
     print("event NIMTapOnItemEvent: pile ${event.pile}, item ${event.item}");
     if (currentItemState == NIMElementState.empty) {
       print("ERROR: item is already removed");
@@ -65,7 +84,9 @@ class GameStateBloc {
     if (workingPile == -1) {
       workingPile = event.pile;
     }
-    if ((workingPile != -1) && (_game.piles[event.pile].toRemoveCount == 1) && !markingToDelete) {
+    if ((workingPile != -1) &&
+        (_game.piles[event.pile].toRemoveCount == 1) &&
+        (currentItemState != NIMElementState.present)) {
       _game.piles[event.pile].switchElementState(event.item);
       workingPile = -1;
       return;
@@ -88,12 +109,26 @@ class GameStateBloc {
     workingPile = -1;
     _game.applyToRemove();
     _game.switchSides();
+    if (_game.currentPlayer == NIMPlayer.ai) {
+      Timer(Duration(seconds: 2), () {
+        var turn = _ai.makeTurn(_game.state);
+        GlobalBloc.push(NIMAITurnEvent(turn));
+      });
+    }
   }
 
   void _processewSettingsEvent(NIMNewSettingsEvent event) {
     print("event NIMNewSettingsEvent");
     _settings = event.settings;
     _game = NIMGame.withSettings(_settings);
+    _ai = NIMGameAI.withSettings(_settings);
+    _settingsController.add(_settings);
+  }
+
+  void _processAITurnEvent(NIMAITurnEvent event) {
+    print("event NIMAITurnEvent");
+    _game.applyTurn(event.turn);
+    _game.switchSides();
   }
 
   void dispose() {

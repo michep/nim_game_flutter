@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import './nimgame.dart';
-import '../state/game_bloc.dart';
+import '../state/gamebloc.dart';
 
 class ItemWidget extends StatelessWidget {
   final int pile, index;

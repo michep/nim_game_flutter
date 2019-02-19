@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
 
 import './nimgame.dart';
-import './item_widget.dart';
-import '../state/game_bloc.dart';
+import './itemwidget.dart';
+import '../state/gamebloc.dart';
 
 class GameController extends StatefulWidget {
-  State<StatefulWidget> createState() {
-    return GameControllerState();
-  }
+  @override
+  State<GameController> createState() => GameControllerState();
 }
 
-class GameControllerState extends State {
+class GameControllerState extends State<GameController> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: GlobalBloc.stream,
+      stream: GlobalBloc.gamestream,
       builder: (BuildContext context, AsyncSnapshot<NIMGame> gameData) {
-        if (gameData.hasData) {
-          if (gameData.data.winner == null) {
-            return _buildPiles(gameData.data);
-          } else {
-            return _buildWinner(gameData.data);
-          }
-        } else {
+        if (!gameData.hasData) {
           return _buildLoading();
         }
+        if (gameData.data.winner != null) {
+          return _buildWinner(gameData.data);
+        }
+        if (gameData.data.currentPlayer == NIMPlayer.ai) {
+          return AbsorbPointer(
+            child: _buildPiles(gameData.data),
+          );
+        }
+        return _buildPiles(gameData.data);
       },
     );
   }

@@ -8,6 +8,11 @@ class NIMGameAI {
   bool _misere;
   NIMGameState _state;
 
+  NIMGameAI.withSettings(NIMGameSettings settings) {
+    _difficulty = settings.difficulty;
+    _misere = settings.misere;
+  }
+
   NIMGameAI(NIMDifficulty difficulty, bool misere) {
     _difficulty = difficulty;
     _misere = misere;
