@@ -109,7 +109,7 @@ class GameStateBloc {
     workingPile = -1;
     _game.applyToRemove();
     _game.switchSides();
-    if (_game.currentPlayer == NIMPlayer.ai) {
+    if (_game.currentPlayer == NIMPlayer.ai && _game.winner == null) {
       Timer(Duration(seconds: 2), () {
         var turn = _ai.makeTurn(_game.state);
         GlobalBloc.push(NIMAITurnEvent(turn));
