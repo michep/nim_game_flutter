@@ -13,7 +13,7 @@ class GameControllerState extends State<GameController> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: GlobalBloc.gamestream,
+      stream: GlobalBloc.gamestream$,
       builder: (BuildContext context, AsyncSnapshot<NIMGame> gameData) {
         if (!gameData.hasData) {
           return _buildLoading();

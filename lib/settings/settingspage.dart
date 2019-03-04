@@ -10,7 +10,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class SettingsPageState extends State<SettingsPage> {
-  NIMGameSettings _settings;
 
   @override
   build(BuildContext context) {
@@ -19,14 +18,13 @@ class SettingsPageState extends State<SettingsPage> {
         title: Text("Settings"),
       ),
       body: StreamBuilder(
-        stream: GlobalBloc.settingsstream,
+        stream: GlobalBloc.settingsstream$,
         builder: (BuildContext context, AsyncSnapshot<NIMGameSettings> settingsData) {
           if (settingsData.hasData) {
             return FormBuilder(
               context,
-              onChanged: (values) => print("onChange: $values"),
-              // onSubmit: (Map<String, dynamic> values) => _commitSettings(context, values),
-              onSubmit: _commitSettings(context),
+              onChanged: _applySettings(context, false),
+              onSubmit: _applySettings(context, true),
               controls: [
                 FormBuilderInput.dropdown(
                   label: "Game Type",
@@ -41,6 +39,7 @@ class SettingsPageState extends State<SettingsPage> {
                   label: "Game Difficulty",
                   attribute: "difficulty",
                   value: settingsData.data.difficulty,
+                  readonly: settingsData.data.gameType == NIMGameType.pvp,
                   options: [
                     FormBuilderInputOption(value: NIMDifficulty.easy, label: "Easy"),
                     FormBuilderInputOption(value: NIMDifficulty.hard, label: "Hard"),
@@ -68,7 +67,7 @@ class SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  _commitSettings(BuildContext context) {
+  _applySettings(BuildContext context, bool commit) {
     return (values) {
       GlobalBloc.push(NIMNewSettingsEvent(NIMGameSettings(
           gameType: values["type"],
@@ -78,7 +77,8 @@ class SettingsPageState extends State<SettingsPage> {
           playerName1: "PLAYER 1",
           playerName2: "PLAYER 2",
           initPiles: [3, 5, 7])));
-      Navigator.pop(context);
+      if (commit)
+        Navigator.pop(context);
     };
   }
 }

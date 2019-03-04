@@ -51,8 +51,8 @@ class GameStateBloc {
   var _settingsController = BehaviorSubject<NIMGameSettings>();
 
   Function(NIMGameEvent) get push => _eventController.sink.add;
-  Stream<NIMGame> get gamestream => _gameController.stream;
-  Stream<NIMGameSettings> get settingsstream => _settingsController.stream;
+  Stream<NIMGame> get gamestream$ => _gameController.stream;
+  Stream<NIMGameSettings> get settingsstream$ => _settingsController.stream;
 
   void _mapEventToGameState(NIMGameEvent event) {
     switch (event.runtimeType) {
